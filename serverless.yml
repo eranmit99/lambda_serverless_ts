@@ -1,0 +1,23 @@
+service: sls-ts
+
+plugins:
+  - serverless-webpack
+
+package:
+  individually: true
+
+custom:
+  webpack:
+    packager: npm
+
+provider:
+  name: aws
+  environment:
+    MY_SECRET: tester
+  region: us-east-2
+  runtime: nodejs14.x
+  role: arn:aws:iam::407825239838:role/iot_to_lambda
+
+functions:
+  myFunction:
+    handler: src/myFunction.handler
