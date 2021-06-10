@@ -9,6 +9,14 @@ package:
 custom:
   webpack:
     packager: npm
+#  custom:
+#    stages:
+#      dev:
+#        domainEnabled: false
+#      staging:
+#        domain: staging.halfstack.software
+#      prod:
+#        domain: halfstack.software
 
 provider:
   name: aws
@@ -16,6 +24,12 @@ provider:
     MY_SECRET: tester
   region: us-east-2
   runtime: nodejs14.x
+#  vpc:
+#    securityGroupIds:
+#      - sg-98f38XXX
+#    subnetdIds:
+#      - subnet-978ffXXX
+#      - subnet-5e59fXXX
 
 functions:
   myFunction:
