@@ -1,23 +1,66 @@
-service: sls-ts
-
+service: no-fly-zone
+frameworkVersion: '2'
 plugins:
   - serverless-webpack
-
+  - serverless-deployment-bucket
 package:
   individually: true
+useDotenv: true
 
 custom:
   webpack:
     packager: npm
+  staging:
+    name: no-fly-zone-staging
+    role: arn:aws:iam::${opt:awsAccountId}:role/iot-to-lambda-staging
+    securityGroupIds: ['sg-0bd4cddfab0b1340d']
+    subnetIds: ['subnet-051fadff0084fb7bb']
+  prod:
+    name: no-fly-zone
+    role: arn:aws:iam::${opt:awsAccountId}:role/iot_to_lambda
+    securityGroupIds: ['sg-1e4f3776', 'sg-00f00a90a0cc3c431']
+    subnetIds: ['subnet-092bcac27a9754c84', 'subnet-0cbd1e6e583e7c9bd']
 
 provider:
+  lambdaHashingVersion: '20201221'
+  deploymentBucket:
+    name: sls-deployments-new
   name: aws
   environment:
-    MY_SECRET: tester
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_URL: ${env:DB_URL}
+    DB_PORT: ${env:DB_PORT}
+    DB_DIALECT: ${env:DB_DIALECT}
+    DB_NAME: ${env:DB_NAME}
+    NODE_ENV: ${env:NODE_ENV}
+    APP_NAME: ${env:APP_NAME}
+    DATADOG_API_URL: ${env:DATADOG_API_URL}
+    DATADOG_API_KEY: ${env:DATADOG_API_KEY}
+    DATADOG_APPLICATION_KEY: ${env:DATADOG_APPLICATION_KEY}
+    QUEUE_HOSTNAME: ${env:QUEUE_HOSTNAME}
+    QUEUE_USERNAME: ${env:QUEUE_USERNAME}
+    QUEUE_PROTOCOL: ${env:QUEUE_PROTOCOL}
+    REDIS_HOST: ${env:REDIS_HOST}
+    REDIS_PORT: ${env:REDIS_PORT}
+    QUEUE_PASSWORD: ${env:QUEUE_PASSWORD}
+    QUEUE_VIRTUAL_HOST: ${env:QUEUE_VIRTUAL_HOST}
+
   region: us-east-2
   runtime: nodejs14.x
-  role: arn:aws:iam::407825239838:role/iot_to_lambda
+  iam:
+    role: ${self:custom.${opt:stage}.role}
 
 functions:
-  myFunction:
-    handler: src/myFunction.handler
+  no-fly-zone:
+    handler: src/handler.handler
+    name: ${self:custom.${opt:stage}.name}
+    memorySize: 512
+    reservedConcurrency: 2
+    maximumRetryAttempts: 0
+    vpc:
+      securityGroupIds: ${self:custom.${opt:stage}.securityGroupIds}
+      subnetIds: ${self:custom.${opt:stage}.subnetIds}
+    events:
+      - iot:
+          sql: "SELECT * FROM 'hawkeye/sensors/#'"
